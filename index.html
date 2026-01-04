@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,19 +10,21 @@
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     html, body {
       background: #000;
-      height: 100vh;
-      width: 100vw;
+      height: 100%;
+      width: 100%;
       overflow: hidden;
       font-family: system-ui, -apple-system, sans-serif;
     }
 
     .shaka-video-container {
-      position: absolute;
+      position: fixed;
       inset: 0;
       width: 100%;
       height: 100%;
+      z-index: 1;
     }
 
     video {
@@ -42,17 +44,14 @@
 
     .modal {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      inset: 0;
       backdrop-filter: blur(6px);
-      background: rgba(0,0,0,0.4);
+      background: rgba(0,0,0,0.45);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 9999;
-      animation: fadeIn .5s ease;
+      animation: fadeIn .4s ease;
     }
 
     .modal.hidden {
@@ -60,35 +59,32 @@
     }
 
     .modal-content {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
       border-radius: 20px;
-      padding: 30px 25px;
+      padding: 28px 22px;
       width: 90%;
-      max-width: 400px;
+      max-width: 380px;
       text-align: center;
       color: #f3f4f6;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      backdrop-filter: blur(12px);
-      transform: scale(.95);
-      animation: scaleIn .4s ease forwards;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      backdrop-filter: blur(14px);
+      animation: scaleIn .35s ease forwards;
     }
 
     .modal-content h2 {
       font-size: 24px;
       font-weight: 700;
       color: #facc15;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .modal-content p {
-      font-size: 16px;
+      font-size: 15px;
       color: #d1d5db;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
       line-height: 1.5;
     }
-
-    .modal-content strong { color: #fff; }
 
     .btn {
       width: 100%;
@@ -98,13 +94,13 @@
       border-radius: 12px;
       margin-bottom: 12px;
       cursor: pointer;
-      transition: .3s;
+      transition: .25s;
     }
 
     #joinButton {
       background: linear-gradient(to right,#3b82f6,#06b6d4);
       color: #fff;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     #joinButton:hover {
@@ -112,8 +108,8 @@
     }
 
     #closeButton {
-      background: rgba(255,255,255,0.1);
-      color: #f3f4f6;
+      background: rgba(255,255,255,0.12);
+      color: #e5e7eb;
     }
 
     #closeButton:hover {
@@ -126,6 +122,7 @@
     }
 
     @keyframes scaleIn {
+      from { transform: scale(.95); opacity: 0 }
       to { transform: scale(1); opacity: 1 }
     }
   </style>
@@ -133,17 +130,16 @@
 
 <body>
 
+  <!-- VIDEO PLAYER -->
   <div class="shaka-video-container" data-shaka-player>
-    <video autoplay playsinline preload="metadata"></video>
+    <video playsinline preload="metadata"></video>
   </div>
 
-  <!-- ========= TELEGRAM MODAL ========= -->
-  <div id="telegramModal" class="modal" role="dialog" aria-modal="true">
+  <!-- TELEGRAM MODAL -->
+  <div id="telegramModal" class="modal">
     <div class="modal-content">
       <h2>Join our Telegram</h2>
-      <p>
-        Stay updated with the latest <strong>Live Match Links</strong> and instant updates.
-      </p>
+      <p>Get instant <strong>Live Match Links</strong> and updates.</p>
 
       <a href="https://t.me/+7VkflslOE9s4YjQ9" target="_blank" rel="noopener">
         <button id="joinButton" class="btn">Join Telegram</button>
@@ -154,18 +150,65 @@
   </div>
 
   <script>
-    // Close modal
     document.getElementById('closeButton').onclick = () => {
       document.getElementById('telegramModal').classList.add('hidden');
     };
 
-    // Optional: auto-hide after 8 seconds
     setTimeout(() => {
-      document.getElementById('telegramModal')?.classList.add('hidden');
+      document.getElementById('telegramModal').classList.add('hidden');
     }, 8000);
   </script>
 
-  <!-- YOUR EXISTING SHAKA SCRIPT CONTINUES BELOW (UNCHANGED) -->
+  <!-- SHAKA PLAYER SCRIPT -->
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      shaka.polyfill.installAll();
+      if (!shaka.Player.isBrowserSupported()) return;
+
+      const video = document.querySelector('video');
+      const player = new shaka.Player(video);
+
+      const ui = new shaka.ui.Overlay(
+        player,
+        document.querySelector('.shaka-video-container'),
+        video
+      );
+
+      ui.configure({
+        controlPanelElements: [
+          'play_pause','time_and_duration','mute','volume',
+          'spacer','quality','fullscreen'
+        ]
+      });
+
+      player.configure({
+        drm: {
+          clearKeys: {
+            "c2c048e439d65316beeda6ef64d5d0f8": "e2fdc132cbdee65501b845ce414fce39"
+          }
+        }
+      });
+
+      const cookieHeader = "__hdnea__=st=1767443306~exp=1767529706~acl=/*~hmac=bea38e16783bfef88f2f2787a46279e01c9f3aa6038dbaff00bac25589a470e";
+
+      player.getNetworkingEngine().registerRequestFilter((type, request) => {
+        request.headers['Referer'] = 'https://www.jiotv.com/';
+        request.headers['User-Agent'] = 'plaYtv/7.1.5';
+        request.headers['Cookie'] = cookieHeader;
+      });
+
+      try {
+        await player.load(
+          "https://jiotvpllive.cdn.jio.com/bpk-tv/Star_Sports_Select_HD_1_BTS/output/index.mpd"
+        );
+        video.muted = true;
+        await video.play();
+      } catch (e) {
+        console.error(e);
+      }
+    });
+  </script>
 
 </body>
 </html>
+
